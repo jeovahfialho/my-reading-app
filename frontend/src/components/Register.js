@@ -11,11 +11,12 @@ const Register = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const history = useHistory();
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8080/register', { name, email, password, dateOfBirth });
+      await axios.post(`${API_URL}/register`, { name, email, password, dateOfBirth });
       setMessage('Registration successful');
       setError('');
       setTimeout(() => history.push('/login'), 2000);

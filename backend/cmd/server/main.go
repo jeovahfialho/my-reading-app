@@ -3,22 +3,42 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"path/filepath"
+	"time"
+
 	"my-reading-app/internal/handler"
 	"my-reading-app/internal/repository"
 	"my-reading-app/internal/service"
 	"my-reading-app/pkg/db"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	env := os.Getenv("ENVIRONMENT")
+
+	var envPath string
+	if env != "" {
+		envPath = filepath.Join("/app", ".env."+env)
+	} else {
+		envPath = filepath.Join("/app", ".env")
+	}
+
+	// Carregar variáveis de ambiente do arquivo .env
+	err := godotenv.Load(envPath)
+	if err != nil {
+		log.Fatalf("Error loading .env %s file from path %s: %v", env, envPath, err)
+	}
+
 	router := gin.Default()
 
-	// Configurar CORS
+	// Configurar CORS dinamicamente
 	config := cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     []string{os.Getenv("FRONTEND_URL")},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

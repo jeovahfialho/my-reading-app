@@ -7,11 +7,12 @@ const Login = ({ setToken }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8080/login', { email, password });
+      const response = await axios.post(`${API_URL}/login`, { email, password });
       setToken(response.data.token);
       setError('');
     } catch (err) {

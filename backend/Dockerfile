@@ -6,12 +6,10 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
-COPY ./cmd/server ./cmd/server
-COPY ./internal ./internal
-COPY ./pkg ./pkg
+COPY . .
 
 RUN go build -o /my-reading-app ./cmd/server
 
 EXPOSE 8080
 
-CMD [ "/my-reading-app" ]
+CMD ["/my-reading-app"]
