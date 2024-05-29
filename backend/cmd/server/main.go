@@ -18,9 +18,8 @@ import (
 )
 
 func main() {
-
+	// Determinar o caminho do .env
 	env := os.Getenv("ENVIRONMENT")
-
 	var envPath string
 	if env != "" {
 		envPath = filepath.Join("/app", ".env."+env)
@@ -31,7 +30,7 @@ func main() {
 	// Carregar variáveis de ambiente do arquivo .env
 	err := godotenv.Load(envPath)
 	if err != nil {
-		log.Fatalf("Error loading .env %s file from path %s: %v", env, envPath, err)
+		log.Fatalf("Error loading .env file from path %s: %v", envPath, err)
 	}
 
 	router := gin.Default()
@@ -54,14 +53,24 @@ func main() {
 		log.Fatal("Failed to connect to MongoDB: ", err)
 	}
 
+	// Inicializar o serviço de Bíblia
+	bibleService, err := service.NewBibleService("/app/data/bibleCatholic.json")
+	if err != nil {
+		log.Fatal("Failed to load Bible data: ", err)
+	}
+
 	// Dependências
 	readingRepo := repository.NewMongoRepository(client)
 	readingService := service.NewReadingService(readingRepo)
-	readingHandler := handler.NewReadingHandler(readingService)
+	readingHandler := handler.NewReadingHandler(readingService, bibleService)
 
 	userRepo := repository.NewMongoUserRepository(client)
 	authService := service.NewAuthService(userRepo, "your_secret_key")
 	authHandler := handler.NewAuthHandler(authService)
+
+	statusRepo := repository.NewMongoReadingStatusRepository(client)
+	statusService := service.NewReadingStatusService(statusRepo)
+	statusHandler := handler.NewReadingStatusHandler(statusService)
 
 	// Rotas de autenticação
 	router.POST("/register", authHandler.Register)
@@ -71,6 +80,11 @@ func main() {
 	router.GET("/readings/:day", readingHandler.GetReading)
 	router.POST("/readings/:day/next", readingHandler.NextReading)
 	router.POST("/readings/:day/previous", readingHandler.PreviousReading)
+	router.GET("/readingText", readingHandler.GetReadingText) // Nova rota para buscar textos bíblicos
+
+	// Rotas de status de leitura
+	router.GET("/status/:userId", statusHandler.GetStatus)
+	router.POST("/status/:userId/:day", statusHandler.UpdateStatus)
 
 	err = router.Run(":8080")
 	if err != nil {

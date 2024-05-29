@@ -8,6 +8,8 @@ RUN go mod download
 
 COPY . .
 
+COPY ./bibleCatholic.json /app/data/bibleCatholic.json
+
 RUN go build -o /my-reading-app ./cmd/server
 
 EXPOSE 8080

@@ -12,8 +12,8 @@ import (
 )
 
 type AuthService interface {
-	Register(user domain.User) (string, error)
-	Login(email, password string) (string, error)
+	Register(input RegisterInput) (string, error)
+	Login(input LoginInput) (string, string, error)
 	VerifyToken(token string) (*jwt.Token, error)
 }
 
@@ -26,10 +26,25 @@ func NewAuthService(userRepo repository.UserRepository, secret string) AuthServi
 	return &authService{userRepo: userRepo, secret: secret}
 }
 
-func (a *authService) Register(user domain.User) (string, error) {
-	hashedPassword := hashPassword(user.Password)
-	user.Password = hashedPassword
-	user.CreatedAt = time.Now()
+type RegisterInput struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (a *authService) Register(input RegisterInput) (string, error) {
+	hashedPassword := hashPassword(input.Password)
+	user := domain.User{
+		Name:      input.Name,
+		Email:     input.Email,
+		Password:  hashedPassword,
+		CreatedAt: time.Now(),
+	}
 	id, err := a.userRepo.CreateUser(user)
 	if err != nil {
 		return "", err
@@ -37,27 +52,28 @@ func (a *authService) Register(user domain.User) (string, error) {
 	return id, nil
 }
 
-func (a *authService) Login(email, password string) (string, error) {
-	user, err := a.userRepo.GetUserByEmail(email)
+func (a *authService) Login(input LoginInput) (string, string, error) {
+	user, err := a.userRepo.GetUserByEmail(input.Email)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	hashedPassword := hashPassword(password)
+	hashedPassword := hashPassword(input.Password)
 	if user.Password != hashedPassword {
-		return "", errors.New("invalid credentials")
+		return "", "", errors.New("invalid credentials")
 	}
 	token, err := a.generateToken(user)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return token, nil
+	return token, user.ID, nil
 }
 
 func (a *authService) generateToken(user domain.User) (string, error) {
 	claims := jwt.MapClaims{
-		"email": user.Email,
-		"role":  user.Role,
-		"exp":   time.Now().Add(time.Hour * 72).Unix(),
+		"email":  user.Email,
+		"userId": user.ID,
+		"role":   user.Role,
+		"exp":    time.Now().Add(time.Hour * 72).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(a.secret))

@@ -10,7 +10,7 @@ import (
 )
 
 type ReadingRepository interface {
-	GetReadingByDay(day int) (domain.Reading, error)
+	GetReadingByDay(day int) (*domain.Reading, error)
 }
 
 type mongoRepository struct {
@@ -21,7 +21,7 @@ func NewMongoRepository(client *mongo.Client) ReadingRepository {
 	return &mongoRepository{client: client}
 }
 
-func (m *mongoRepository) GetReadingByDay(day int) (domain.Reading, error) {
+func (m *mongoRepository) GetReadingByDay(day int) (*domain.Reading, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -31,7 +31,7 @@ func (m *mongoRepository) GetReadingByDay(day int) (domain.Reading, error) {
 	err := collection.FindOne(ctx, filter).Decode(&reading)
 
 	if err != nil {
-		return domain.Reading{}, err
+		return nil, err
 	}
-	return reading, nil
+	return &reading, nil
 }

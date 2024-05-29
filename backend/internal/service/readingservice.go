@@ -3,10 +3,11 @@ package service
 import (
 	"my-reading-app/internal/domain"
 	"my-reading-app/internal/repository"
+	"strconv"
 )
 
 type ReadingService interface {
-	GetReadingByDay(day int) (domain.Reading, error)
+	GetReading(day string) (*domain.Reading, error)
 }
 
 type readingService struct {
@@ -17,6 +18,10 @@ func NewReadingService(repo repository.ReadingRepository) ReadingService {
 	return &readingService{repo: repo}
 }
 
-func (s *readingService) GetReadingByDay(day int) (domain.Reading, error) {
-	return s.repo.GetReadingByDay(day)
+func (s *readingService) GetReading(day string) (*domain.Reading, error) {
+	dayInt, err := strconv.Atoi(day)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.GetReadingByDay(dayInt)
 }

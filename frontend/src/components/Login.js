@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { Container, Box, TextField, Button, Typography, Alert } from '@mui/material';
 
 const Login = ({ setToken }) => {
@@ -8,6 +8,7 @@ const Login = ({ setToken }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const API_URL = process.env.REACT_APP_API_URL;
+  const history = useHistory();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,6 +16,7 @@ const Login = ({ setToken }) => {
       const response = await axios.post(`${API_URL}/login`, { email, password });
       setToken(response.data.token);
       setError('');
+      history.push('/home'); // Redirecionar para a página principal após o login
     } catch (err) {
       setError('Invalid credentials');
     }
